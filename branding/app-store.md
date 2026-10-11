@@ -26,7 +26,7 @@
 
 ■ 투명하게
 · 모든 코드가 GitHub에 MIT 라이선스로 공개돼 있어요.
-  github.com/NEWBIE0413/cheonjiin
+  github.com/loesol/cheonjiin
 
 ■ 시작하기
 설정 › 천지in › 키보드에서 '천지in'을 켠 뒤, 입력창에서 지구본 키를 눌러 고르세요.
@@ -37,8 +37,8 @@
 
 ## 지원·개인정보 URL
 
-지원: https://github.com/NEWBIE0413/cheonjiin
-개인정보처리방침: https://github.com/NEWBIE0413/cheonjiin#개인정보처리방침
+지원: https://github.com/loesol/cheonjiin
+개인정보처리방침: https://github.com/loesol/cheonjiin#개인정보처리방침
 
 ## 심사 메모
 

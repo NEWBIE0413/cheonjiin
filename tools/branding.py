@@ -200,7 +200,7 @@ def code_card(d, x, y):
     h = 420 * SS
     d.rounded_rectangle([x, y, x + w, y + h], radius=44 * SS, fill=WHITE)
     mono = ImageFont.truetype("/System/Library/Fonts/SFNSMono.ttf", 40 * SS)
-    lines = [("github.com/NEWBIE0413/cheonjiin", INK), ("", INK), ("License   MIT", GRAY),
+    lines = [("github.com/loesol/cheonjiin", INK), ("", INK), ("License   MIT", GRAY),
              ("Network   none", GRAY), ("Access    전체 접근 없이도 동작", GRAY)]
     for i, (line, color) in enumerate(lines):
         f = font("Regular", 40) if any("가" <= c <= "힣" for c in line) else mono
