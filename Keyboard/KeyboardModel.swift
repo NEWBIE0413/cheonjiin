@@ -1,3 +1,4 @@
+import AudioToolbox
 import CheonjiinCore
 import UIKit
 
@@ -86,7 +87,7 @@ final class KeyboardModel {
     // MARK: 키
 
     func press(_ action: KeyAction) {
-        feedback()
+        feedback(Self.sound(for: action))
         keyRepeatTask?.cancel()
         var repeatPayload: RepeatPayload?
         syncTask?.cancel()
@@ -196,7 +197,8 @@ final class KeyboardModel {
         }
         proxy?.adjustTextPosition(byCharacterOffset: steps - spaceSteps)
         spaceSteps = steps
-        if hapticsAllowed { haptic.impactOccurred(intensity: 0.4) }
+        // 커서 이동은 진동만(칸마다 소리가 나면 시끄럽다). 세기는 다른 키와 같다.
+        if hapticsAllowed { haptic.impactOccurred() }
     }
 
     // MARK: 문서와 동기화
@@ -281,12 +283,12 @@ final class KeyboardModel {
     /// 글자 키를 0.45초 넘게 누르고 있으면 같은 글자를 계속 넣는다(ㅋㅋㅋ, ㅠㅠㅠ, ...).
     private func startKeyRepeat(_ payload: RepeatPayload) {
         keyRepeatTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(450))
+            try? await Task.sleep(for: Self.repeatDelay)
             while !Task.isCancelled {
                 guard let self else { return }
+                self.feedback(Self.keySound)
                 self.repeatOnce(payload)
-                if self.hapticsAllowed { self.haptic.impactOccurred(intensity: 0.4) }
-                try? await Task.sleep(for: .milliseconds(85))
+                try? await Task.sleep(for: Self.repeatInterval)
             }
         }
     }
@@ -311,17 +313,17 @@ final class KeyboardModel {
     private func startRepeat() {
         repeatTask?.cancel()
         repeatTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(450))
+            try? await Task.sleep(for: Self.repeatDelay)
             var count = 0
             while !Task.isCancelled {
                 guard let self else { return }
+                self.feedback(Self.deleteSound)
                 if count < 14 {
                     self.deleteOnce()
-                    if self.hapticsAllowed { self.haptic.impactOccurred(intensity: 0.5) }
-                    try? await Task.sleep(for: .milliseconds(70))
+                    try? await Task.sleep(for: Self.repeatInterval)
                 } else {
                     self.deleteWord()
-                    try? await Task.sleep(for: .milliseconds(180))
+                    try? await Task.sleep(for: .milliseconds(150))
                 }
                 count += 1
             }
@@ -344,7 +346,6 @@ final class KeyboardModel {
             count += 1
         }
         for _ in 0..<max(count, 1) { proxy.deleteBackward() }
-        if hapticsAllowed { haptic.impactOccurred(intensity: 0.6) }
     }
 
     private func commitComposition() {
@@ -365,13 +366,36 @@ final class KeyboardModel {
         syncComposing()
     }
 
-    /// 진동을 먼저 — 문서 편집보다 앞서야 손끝 느낌이 늦지 않는다.
-    private func feedback() {
-        // 키보드 익스텐션의 진동은 '전체 접근 허용'이 켜져 있을 때만 동작한다.
+    // MARK: 진동·소리
+
+    /// 길게 누르기: 이만큼 누르고 있으면 반복을 시작하고, 이 간격으로 반복한다(지우기도 같다).
+    static let repeatDelay: Duration = .milliseconds(320)
+    static let repeatInterval: Duration = .milliseconds(50)
+
+    /// iOS 기본 키보드와 같은 시스템 소리: 글자 / 지우기 / 기능 키.
+    static let keySound: SystemSoundID = 1104
+    static let deleteSound: SystemSoundID = 1155
+    static let modifierSound: SystemSoundID = 1156
+
+    private static func sound(for action: KeyAction) -> SystemSoundID {
+        switch action {
+        case .cheonjiin, .jamo, .character, .punctuation: keySound
+        case .backspace: deleteSound
+        default: modifierSound
+        }
+    }
+
+    /// 진동과 소리를 먼저 — 문서 편집보다 앞서야 손끝 느낌이 늦지 않는다.
+    /// 누르기·반복·지우기 모두 같은 세기로 울린다.
+    private func feedback(_ sound: SystemSoundID) {
+        // 키보드 익스텐션의 진동과 시스템 소리는 '전체 접근 허용'이 켜져 있을 때만 난다.
+        // 소리는 무음 모드면 iOS가 알아서 끈다.
         if hapticsAllowed {
             haptic.impactOccurred()
             haptic.prepare()
+            AudioServicesPlaySystemSound(sound)
+        } else {
+            UIDevice.current.playInputClick()
         }
-        UIDevice.current.playInputClick()
     }
 }
