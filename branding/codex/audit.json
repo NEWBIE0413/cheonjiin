@@ -453,7 +453,7 @@
     },
     {
       "file": "screenshots/04.png",
-      "text": "loesol/cheonjiin",
+      "text": "oesoll/cheonjiin",
       "font": "Medium",
       "bounds": [
         96.0,
@@ -537,5 +537,5 @@
       "sha256": "e32d12d7ad366fa624daa4fc57733a62649adf22634d25dda22ab180f413dd47"
     }
   ],
-  "source_sha256": "fc904a665958c7ac33819334eb6a1998c7870ec3a399da1e4987eaa215ca6b1b"
+  "source_sha256": "2c931f95bd3613b33f09340f96f6482ae9c69d862ffb0305792e94d2b712fbf0"
 }

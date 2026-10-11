@@ -12,7 +12,7 @@ struct ContentView: View {
     @FocusState private var focused: Bool
     @Environment(\.openURL) private var openURL
 
-    private static let repository = URL(string: "https://github.com/loesol/cheonjiin")!
+    private static let repository = URL(string: "https://github.com/oesoll/cheonjiin")!
 
     var body: some View {
         NavigationStack {

@@ -144,7 +144,7 @@ def build():
     opened.text("열린 코드, 열린 가능성.", 733, 1108, 31, fill=MUTED)
     opened.line(96, 1350, 1194, 1350)
     opened.text("GitHub", 96, 1420, 35, fill=MUTED)
-    opened.text("loesol/cheonjiin", 96, 1505, 67, "Medium")
+    opened.text("oesoll/cheonjiin", 96, 1505, 67, "Medium")
     opened.text("가볍게 쓰고, 함께 다듬어요.", 96, 1715, 43, fill=MUTED)
     opened.keyboard(56, 1830, 1178)
     opened.footer("천지in  ·  MIT 라이선스  ·  오픈소스")
