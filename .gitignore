@@ -5,3 +5,4 @@ DerivedData/
 .claude/ledger/
 .swiftpm/
 Config/Local.xcconfig
+.blitz/
