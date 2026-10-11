@@ -65,8 +65,9 @@ final class KeyboardModel {
     /// 길게 누르면 반복할 입력과, 그 반복을 일으킨 키.
     private var keyRepeatTask: Task<Void, Never>?
     private var repeatingAction: KeyAction?
-    /// 간격을 누르는 순간 띄어쓰기를 넣었는지 — 끌어서 커서 이동이 되면 되돌린다.
-    private var spaceInserted = false
+    /// 방금 누른 키의 입력을 되돌리는 방법 — 그 키에서 손가락을 밀어 커서 이동이 시작되면 쓴다
+    /// (키는 닿는 순간 입력되므로, 밀기로 바뀌면 잘못 들어간 글자를 지워야 한다).
+    private var undoLastPress: (() -> Void)?
     /// 문장부호 키로 넣은 마지막 부호의 순번. 다른 키를 누르면 끝난다.
     private var punctuationIndex: Int?
     private var lastEditTime = 0.0
@@ -96,12 +97,15 @@ final class KeyboardModel {
             punctuationIndex = nil
             syncComposing()
         }
+        undoLastPress = nil
         switch action {
         case .cheonjiin(let input):
+            rememberEngineForUndo()
             apply(engine.type(input, at: now))
             repeatPayload = .hangul(input)
         case .jamo(let c):
             let jamo = shift == .off ? c : Dubeolsik.shifted(c)
+            rememberEngineForUndo()
             apply(engine.type(.jamo(jamo), at: now))
             if shift == .on { shift = .off }
             repeatPayload = .hangul(.jamo(jamo))
@@ -109,6 +113,7 @@ final class KeyboardModel {
             commitComposition()
             let typed = shift == .off ? text : text.uppercased()
             proxy?.insertText(typed)
+            undoLastPress = { [weak self] in self?.proxy?.deleteBackward() }
             if shift == .on { shift = .off }
             autoShift()
             repeatPayload = .text(typed)
@@ -119,19 +124,26 @@ final class KeyboardModel {
             // 누르는 순간 처리한다. 떼는 순간에 하면 빠른 연타에서 간격을 떼기 전에 다음 자음이
             // 먼저 들어가 앞 글자에 붙어 버린다("안" 간격 ㄴ → "알").
             spaceSteps = 0
-            spaceInserted = false
             // 천지인에서는 조합 중인 간격이 조합만 끝낸다. 두벌식은 언제나 띄어쓴다.
             if !isDubeolsik, punctuationIndex != nil || engine.isComposing {
                 commitComposition()
             } else {
                 commitComposition()
                 proxy?.insertText(" ")
-                spaceInserted = true
+                undoLastPress = { [weak self] in self?.proxy?.deleteBackward() }
                 if !layer.isLetters { setLayer(letterLayer) }
                 autoShift()
             }
         case .punctuation:
             let marks = Self.punctuationMarks
+            let previous = punctuationIndex
+            undoLastPress = { [weak self] in
+                guard let self else { return }
+                self.proxy?.deleteBackward()
+                if let previous { self.proxy?.insertText(marks[previous]) }
+                self.punctuationIndex = previous
+                self.syncComposing()
+            }
             if let index = punctuationIndex {
                 proxy?.deleteBackward()
                 punctuationIndex = (index + 1) % marks.count
@@ -171,12 +183,15 @@ final class KeyboardModel {
             keyRepeatTask?.cancel()
             repeatingAction = nil
         }
+        if cursorMode {
+            // 밀어서 커서를 옮긴 손가락이 떨어졌을 뿐 — 그 키의 탭 동작(한/A 전환 등)은 하지 않는다.
+            cursorMode = false
+            return
+        }
         switch action {
         case .backspace:
             repeatTask?.cancel()
             repeatTask = nil
-        case .space:
-            cursorMode = false
         case .globe:
             // 한/A 탭: 한글 ↔ 영문. 길게: iOS의 다음 키보드(이모지 등) — 심사 규정상 다음 키보드로 넘어갈 방법.
             globeTask?.cancel()
@@ -186,19 +201,47 @@ final class KeyboardModel {
         }
     }
 
-    /// 간격 키를 좌우로 끌면 커서가 움직인다.
-    func spaceDrag(_ dx: CGFloat) {
-        let steps = Int(dx / Self.cursorStep)
-        guard steps != spaceSteps else { return }
+    /// 글자 키나 간격 키를 누른 채 좌우로 밀면 커서가 움직인다(시스템 키보드의 트랙패드처럼).
+    /// 빠른 타자 중 손가락이 조금 미끄러진 것과 구분하려고 글자 키는 16pt 넘게, 가로로 분명하게
+    /// 밀어야 시작한다. 시작되면 그 키로 들어간 글자는 되돌린다.
+    func drag(_ action: KeyAction, dx: CGFloat, dy: CGFloat) {
+        guard Self.startsCursorDrag(action) else { return }
         if !cursorMode {
-            if spaceInserted { proxy?.deleteBackward() }
+            let threshold: CGFloat = action == .space ? Self.cursorStep : 16
+            guard abs(dx) >= threshold, abs(dx) > abs(dy) * 1.5 else { return }
+            keyRepeatTask?.cancel()
+            repeatingAction = nil
+            undoLastPress?()
+            undoLastPress = nil
             commitComposition()
+            spaceSteps = 0
             cursorMode = true
         }
+        let steps = Int(dx / Self.cursorStep)
+        guard steps != spaceSteps else { return }
         proxy?.adjustTextPosition(byCharacterOffset: steps - spaceSteps)
         spaceSteps = steps
         // 커서 이동은 진동만(칸마다 소리가 나면 시끄럽다). 세기는 다른 키와 같다.
         if hapticsAllowed { haptic.impactOccurred() }
+    }
+
+    private static func startsCursorDrag(_ action: KeyAction) -> Bool {
+        switch action {
+        case .cheonjiin, .jamo, .character, .punctuation, .space: true
+        default: false
+        }
+    }
+
+    /// 한글 키 입력 직전 상태를 붙잡아 두고, 되돌릴 때 그 상태로 문서와 조합기를 함께 돌린다.
+    private func rememberEngineForUndo() {
+        let saved = engine
+        let savedText = engine.composingText
+        undoLastPress = { [weak self] in
+            guard let self else { return }
+            let edit = TextEdit.diff(from: self.engine.composingText, to: savedText)
+            self.engine = saved
+            self.apply(edit)
+        }
     }
 
     // MARK: 문서와 동기화

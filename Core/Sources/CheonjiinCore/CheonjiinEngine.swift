@@ -61,7 +61,7 @@ public struct TextEdit: Equatable, Sendable {
 
     public var isEmpty: Bool { deleteCount == 0 && insert.isEmpty }
 
-    static func diff(from old: String, to new: String) -> TextEdit {
+    public static func diff(from old: String, to new: String) -> TextEdit {
         let common = zip(old, new).prefix { $0 == $1 }.count
         return TextEdit(deleteCount: old.count - common, insert: String(new.dropFirst(common)))
     }

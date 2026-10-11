@@ -5,7 +5,7 @@ import UIKit
 /// 손가락마다 어느 키인지 판정한다 — 시스템 키보드와 같은 방식이라 빠른 연타·겹친 터치에 강하다.
 final class KeyboardView: UIView {
     /// 세로 화면의 줄 높이. 가로 화면(높이가 좁음)에서는 `compactRowHeight`.
-    static let rowHeight: CGFloat = 54
+    static let rowHeight: CGFloat = 48
     static let compactRowHeight: CGFloat = 34
     /// 키 둘레 3pt 틈과 합쳐 위아래 여백을 최소로.
     static let verticalPadding: CGFloat = 1
@@ -86,8 +86,9 @@ final class KeyboardView: UIView {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         for touch in touches {
-            guard let entry = self.touches[ObjectIdentifier(touch)], entry.key.spec.action == .space else { continue }
-            model.spaceDrag(touch.location(in: self).x - entry.start.x)
+            guard let entry = self.touches[ObjectIdentifier(touch)] else { continue }
+            let point = touch.location(in: self)
+            model.drag(entry.key.spec.action, dx: point.x - entry.start.x, dy: point.y - entry.start.y)
         }
     }
 
