@@ -34,7 +34,7 @@ final class KeyboardModel {
     private(set) var forcedDark = false { didSet { if forcedDark != oldValue { onChange?() } } }
     /// 조합 중인 글자(문장부호 순환 포함)가 있는지 — 이때 간격 키는 띄어쓰지 않고 조합만 끝낸다.
     private(set) var composing = false { didSet { if composing != oldValue { onChange?() } } }
-    /// 간격 키를 끌어 커서를 옮기는 중 — 시스템 키보드처럼 키 글자를 감춘다.
+    /// 키를 밀어 커서를 옮기는 중 — 키 글자는 그대로 둔다(사용자 요청: 키보드가 사라지지 않게).
     private(set) var cursorMode = false { didSet { if cursorMode != oldValue { onChange?() } } }
     /// 숫자·특수문자 화면의 쪽(0 = 1/2, 1 = 2/2).
     private(set) var symbolPage = 0 { didSet { if symbolPage != oldValue { onChange?() } } }
@@ -201,7 +201,7 @@ final class KeyboardModel {
         }
     }
 
-    /// 글자 키나 간격 키를 누른 채 좌우로 밀면 커서가 움직인다(시스템 키보드의 트랙패드처럼).
+    /// 글자 키나 간격 키를 누른 채 좌우로 밀면 커서가 움직인다.
     /// 빠른 타자 중 손가락이 조금 미끄러진 것과 구분하려고 글자 키는 16pt 넘게, 가로로 분명하게
     /// 밀어야 시작한다. 시작되면 그 키로 들어간 글자는 되돌린다.
     func drag(_ action: KeyAction, dx: CGFloat, dy: CGFloat) {

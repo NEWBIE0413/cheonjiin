@@ -284,7 +284,6 @@ final class KeyView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     func update(_ model: KeyboardModel) {
-        content.alpha = model.cursorMode ? 0 : 1
         switch spec.content {
         case .letter(let s):
             if model.shift == .off {
