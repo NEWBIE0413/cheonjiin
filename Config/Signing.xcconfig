@@ -1,0 +1,6 @@
+// 서명 설정. 직접 빌드하려면 Config/Local.xcconfig를 만들어 자기 값을 넣는다(저장소에는 올라가지 않음).
+//   DEVELOPMENT_TEAM = ABCDE12345
+//   BUNDLE_ID_PREFIX = com.example
+DEVELOPMENT_TEAM =
+BUNDLE_ID_PREFIX = com.seol
+#include? "Local.xcconfig"

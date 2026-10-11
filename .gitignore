@@ -1,0 +1,7 @@
+.build/
+build/
+DerivedData/
+*.xcodeproj/
+.claude/ledger/
+.swiftpm/
+Config/Local.xcconfig
