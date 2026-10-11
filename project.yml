@@ -57,7 +57,7 @@ targets:
             IsASCIICapable: false
             PrefersRightToLeft: false
             PrimaryLanguage: ko-KR
-            # 진동(햅틱)은 '전체 접근 허용'을 켜야만 동작한다. 네트워크는 쓰지 않는다.
+            # 진동과 키 소리는 '전체 접근 허용'을 켜야만 난다. 네트워크는 쓰지 않는다.
             RequestsOpenAccess: true
     settings:
       base:
