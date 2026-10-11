@@ -1,0 +1,541 @@
+{
+  "text": [
+    {
+      "file": "screenshots/01.png",
+      "text": "천지in",
+      "font": "SemiBold",
+      "bounds": [
+        96.0,
+        144.0,
+        216.0,
+        186.0
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "천지인 키보드",
+      "font": "Regular",
+      "bounds": [
+        282.0,
+        157.0,
+        439.5,
+        182.5
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "01",
+      "font": "Regular",
+      "bounds": [
+        1140.0,
+        151.0,
+        1173.0,
+        174.5
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "매일 쓰니까,",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        370.0,
+        658.5,
+        487.0
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "가볍고 단정하게.",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        524.0,
+        858.5,
+        628.0
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "꼭 필요한 것만 남긴 천지인 키보드",
+      "font": "Regular",
+      "bounds": [
+        100.0,
+        746.0,
+        717.5,
+        786.5
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "익숙한 세 획. 편안한 한글.",
+      "font": "Medium",
+      "bounds": [
+        96.0,
+        1486.0,
+        564.0,
+        1527.0
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "오늘은 조금 가볍게.",
+      "font": "Regular",
+      "bounds": [
+        142.0,
+        1658.0,
+        608.5,
+        1711.5
+      ]
+    },
+    {
+      "file": "screenshots/01.png",
+      "text": "광고 없음  ·  추적 없음  ·  오픈소스",
+      "font": "Regular",
+      "bounds": [
+        96.0,
+        2663.0,
+        516.0,
+        2690.5
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "천지in",
+      "font": "SemiBold",
+      "bounds": [
+        96.0,
+        144.0,
+        216.0,
+        186.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "천지인 키보드",
+      "font": "Regular",
+      "bounds": [
+        282.0,
+        157.0,
+        439.5,
+        182.5
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "02",
+      "font": "Regular",
+      "bounds": [
+        1140.0,
+        151.0,
+        1178.0,
+        174.5
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "없는 게",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        370.0,
+        424.0,
+        473.5
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "마음에 들어요.",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        524.0,
+        758.0,
+        628.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "입력할 때는, 입력에만.",
+      "font": "Regular",
+      "bounds": [
+        100.0,
+        746.0,
+        506.5,
+        792.5
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "광고 없음",
+      "font": "Medium",
+      "bounds": [
+        96.0,
+        970.0,
+        370.0,
+        1035.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "시선을 빼앗지 않아요",
+      "font": "Regular",
+      "bounds": [
+        655.0,
+        996.0,
+        937.5,
+        1026.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "추적 없음",
+      "font": "Medium",
+      "bounds": [
+        96.0,
+        1172.0,
+        370.0,
+        1237.5
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "입력하는 순간도 나답게",
+      "font": "Regular",
+      "bounds": [
+        655.0,
+        1198.0,
+        967.0,
+        1228.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "구독 없음",
+      "font": "Medium",
+      "bounds": [
+        96.0,
+        1374.0,
+        370.0,
+        1440.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "구독 없이, 가볍게",
+      "font": "Regular",
+      "bounds": [
+        655.0,
+        1400.0,
+        887.5,
+        1434.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "지금 쓰고 싶은 말에만.",
+      "font": "Regular",
+      "bounds": [
+        142.0,
+        1630.0,
+        645.5,
+        1680.0
+      ]
+    },
+    {
+      "file": "screenshots/02.png",
+      "text": "덜어낸 만큼, 입력에 집중해요.",
+      "font": "Regular",
+      "bounds": [
+        96.0,
+        2663.0,
+        460.0,
+        2694.0
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "천지in",
+      "font": "SemiBold",
+      "bounds": [
+        96.0,
+        144.0,
+        216.0,
+        186.0
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "천지인 키보드",
+      "font": "Regular",
+      "bounds": [
+        282.0,
+        157.0,
+        439.5,
+        182.5
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "03",
+      "font": "Regular",
+      "bounds": [
+        1140.0,
+        151.0,
+        1179.0,
+        174.5
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "숫자도 기호도,",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        370.0,
+        759.0,
+        487.0
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "흐름은 그대로.",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        524.0,
+        758.0,
+        627.5
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "1/2 키로 두 쪽의 기호를 오가요.",
+      "font": "Regular",
+      "bounds": [
+        100.0,
+        746.0,
+        671.5,
+        787.5
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "3시 30분 :)",
+      "font": "Regular",
+      "bounds": [
+        142.0,
+        930.0,
+        426.0,
+        991.0
+      ]
+    },
+    {
+      "file": "screenshots/03.png",
+      "text": "한 번 더 누르면, 더 많은 기호.",
+      "font": "Medium",
+      "bounds": [
+        96.0,
+        1900.0,
+        582.5,
+        1942.0
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "천지in",
+      "font": "SemiBold",
+      "bounds": [
+        96.0,
+        144.0,
+        216.0,
+        186.0
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "천지인 키보드",
+      "font": "Regular",
+      "bounds": [
+        282.0,
+        157.0,
+        439.5,
+        182.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "04",
+      "font": "Regular",
+      "bounds": [
+        1140.0,
+        151.0,
+        1179.0,
+        174.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "안까지 투명한",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        370.0,
+        725.5,
+        473.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "천지인 키보드.",
+      "font": "Bold",
+      "bounds": [
+        96.0,
+        524.0,
+        758.0,
+        627.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "모든 코드를 누구나 살펴볼 수 있어요.",
+      "font": "Regular",
+      "bounds": [
+        100.0,
+        746.0,
+        769.0,
+        786.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "MIT",
+      "font": "Light",
+      "bounds": [
+        84.0,
+        940.0,
+        605.0,
+        1159.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "오픈소스",
+      "font": "Medium",
+      "bounds": [
+        729.0,
+        1015.0,
+        933.0,
+        1063.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "열린 코드, 열린 가능성.",
+      "font": "Regular",
+      "bounds": [
+        733.0,
+        1108.0,
+        1016.0,
+        1139.0
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "GitHub",
+      "font": "Regular",
+      "bounds": [
+        96.0,
+        1420.0,
+        205.0,
+        1446.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "NEWBIE0413/cheonjiin",
+      "font": "Medium",
+      "bounds": [
+        96.0,
+        1505.0,
+        795.5,
+        1568.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "가볍게 쓰고, 함께 다듬어요.",
+      "font": "Regular",
+      "bounds": [
+        96.0,
+        1715.0,
+        558.0,
+        1758.5
+      ]
+    },
+    {
+      "file": "screenshots/04.png",
+      "text": "천지in  ·  MIT 라이선스  ·  오픈소스",
+      "font": "Regular",
+      "bounds": [
+        96.0,
+        2663.0,
+        531.5,
+        2690.5
+      ]
+    }
+  ],
+  "keyboards": [
+    {
+      "file": "screenshots/01.png",
+      "x": 56,
+      "y": 1830,
+      "width": 1178,
+      "layer": "korean",
+      "page": 0,
+      "height": 753,
+      "sha256": "e32d12d7ad366fa624daa4fc57733a62649adf22634d25dda22ab180f413dd47"
+    },
+    {
+      "file": "screenshots/02.png",
+      "x": 56,
+      "y": 1810,
+      "width": 1178,
+      "layer": "korean",
+      "page": 0,
+      "height": 753,
+      "sha256": "e32d12d7ad366fa624daa4fc57733a62649adf22634d25dda22ab180f413dd47"
+    },
+    {
+      "file": "screenshots/03.png",
+      "x": 96,
+      "y": 1118,
+      "width": 1098,
+      "layer": "symbols",
+      "page": 0,
+      "height": 702,
+      "sha256": "35ce2b9af41001da89835990b319c2358fe56436659fb59000fc50e8cbfaa521"
+    },
+    {
+      "file": "screenshots/03.png",
+      "x": 96,
+      "y": 2010,
+      "width": 1098,
+      "layer": "symbols",
+      "page": 1,
+      "height": 702,
+      "sha256": "a8f637e0eeade08a9e6392b2e2f753edbfbd2e12f62e461eb15a019c437b03b4"
+    },
+    {
+      "file": "screenshots/04.png",
+      "x": 56,
+      "y": 1830,
+      "width": 1178,
+      "layer": "korean",
+      "page": 0,
+      "height": 753,
+      "sha256": "e32d12d7ad366fa624daa4fc57733a62649adf22634d25dda22ab180f413dd47"
+    }
+  ],
+  "source_sha256": "630b6be0daf892171ae543cdbdc15463f3ebf02f207e93d303a7d775648602d7"
+}

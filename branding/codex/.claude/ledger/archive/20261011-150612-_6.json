@@ -1,0 +1,57 @@
+{
+  "goal": "천지in 아이콘 1장 및 스크린샷 4장: 출력 규격·한글·실제 키보드 배치 검증",
+  "owner": "%6",
+  "status": "completed",
+  "created_at": "2026-10-11T15:01:07+09:00",
+  "acceptance_criteria": [
+    {
+      "id": "ac1",
+      "desc": "5개 PNG의 치수, RGB 모드, 불투명성, sRGB 프로필을 확인",
+      "verify": "python3 build.py verify-specs",
+      "receipt": {
+        "passed": true,
+        "exit_code": 0,
+        "command": "python3 build.py verify-specs",
+        "output_tail": "PASS icon-1024.png: (1024, 1024), RGB PNG, no alpha, sRGB\nPASS screenshots/01.png: (1290, 2796), RGB PNG, no alpha, sRGB\nPASS screenshots/02.png: (1290, 2796), RGB PNG, no alpha, sRGB\nPASS screenshots/03.png: (1290, 2796), RGB PNG, no alpha, sRGB\nPASS screenshots/04.png: (1290, 2796), RGB PNG, no alpha, sRGB",
+        "at": "2026-10-11T15:06:12+09:00",
+        "git_state": {
+          "head": "92585c8b18c307de8ec5f0df70f63e3c401d5d2f",
+          "worktree_digest": "e64174db10ba3265"
+        }
+      }
+    },
+    {
+      "id": "ac2",
+      "desc": "모든 조판 글자의 폰트 글리프 및 영역 경계, 가격표현 부재 확인",
+      "verify": "python3 build.py verify-type",
+      "receipt": {
+        "passed": true,
+        "exit_code": 0,
+        "command": "python3 build.py verify-type",
+        "output_tail": "PASS Pretendard SemiBold: 4 unique characters, no missing glyphs\nPASS Pretendard Regular: 161 unique characters, no missing glyphs\nPASS Pretendard Bold: 44 unique characters, no missing glyphs\nPASS Pretendard Medium: 49 unique characters, no missing glyphs\nPASS Pretendard Light: 3 unique characters, no missing glyphs\nPASS 44 text runs: in bounds; no price claims",
+        "at": "2026-10-11T15:06:12+09:00",
+        "git_state": {
+          "head": "92585c8b18c307de8ec5f0df70f63e3c401d5d2f",
+          "worktree_digest": "e64174db10ba3265"
+        }
+      }
+    },
+    {
+      "id": "ac3",
+      "desc": "출력 키보드 5개가 원본 keyboard()와 픽셀 일치",
+      "verify": "python3 build.py verify-keyboards",
+      "receipt": {
+        "passed": true,
+        "exit_code": 0,
+        "command": "python3 build.py verify-keyboards",
+        "output_tail": "PASS screenshots/01.png korean/0: pixel-identical to keyboard()\nPASS screenshots/02.png korean/0: pixel-identical to keyboard()\nPASS screenshots/03.png symbols/0: pixel-identical to keyboard()\nPASS screenshots/03.png symbols/1: pixel-identical to keyboard()\nPASS screenshots/04.png korean/0: pixel-identical to keyboard()",
+        "at": "2026-10-11T15:06:12+09:00",
+        "git_state": {
+          "head": "92585c8b18c307de8ec5f0df70f63e3c401d5d2f",
+          "worktree_digest": "e64174db10ba3265"
+        }
+      }
+    }
+  ],
+  "closed_at": "2026-10-11T15:06:12+09:00"
+}
