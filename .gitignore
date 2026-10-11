@@ -10,3 +10,6 @@ Config/Local.xcconfig
 .agents/
 .claude/
 .codex/
+.mcp.json
+CLAUDE.md
+opencode.json
