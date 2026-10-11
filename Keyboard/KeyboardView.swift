@@ -6,7 +6,7 @@ import UIKit
 final class KeyboardView: UIView {
     /// 세로 화면의 줄 높이. 가로 화면(높이가 좁음)에서는 `compactRowHeight`.
     static let rowHeight: CGFloat = 54
-    static let compactRowHeight: CGFloat = 40
+    static let compactRowHeight: CGFloat = 34
     /// 키 둘레 3pt 틈과 합쳐 위아래 여백을 최소로.
     static let verticalPadding: CGFloat = 1
     static func height(rowHeight: CGFloat) -> CGFloat { rowHeight * 4 + verticalPadding * 2 }
@@ -22,6 +22,7 @@ final class KeyboardView: UIView {
     private var keys: [KeyView] = []
     private var builtLayer: Layer?
     private var builtPage = 0
+    private var builtLandscape = false
     private var builtWidth: CGFloat = 0
     private var touches: [ObjectIdentifier: (key: KeyView, start: CGPoint)] = [:]
 
@@ -51,7 +52,8 @@ final class KeyboardView: UIView {
     }
 
     private var needsRebuild: Bool {
-        builtLayer != model.layer || (model.layer == .symbols && builtPage != model.symbolPage)
+        builtLayer != model.layer || builtLandscape != model.landscape
+            || (model.layer == .symbols && builtPage != model.symbolPage)
     }
 
     private func rebuild() {
@@ -59,8 +61,10 @@ final class KeyboardView: UIView {
         touches.removeAll()
         builtLayer = model.layer
         builtPage = model.symbolPage
+        builtLandscape = model.landscape
         builtWidth = bounds.width
-        keys = Self.layout(model.layer, page: model.symbolPage, letterLayer: model.letterLayer, width: bounds.width, rowHeight: rowHeight).map { spec in
+        keys = Self.layout(model.layer, page: model.symbolPage, letterLayer: model.letterLayer,
+                           landscape: model.landscape, width: bounds.width, rowHeight: rowHeight).map { spec in
             let key = KeyView(spec: spec)
             addSubview(key)
             key.update(model)
@@ -117,7 +121,8 @@ final class KeyboardView: UIView {
 
     // MARK: 배치
 
-    static func layout(_ layer: Layer, page: Int, letterLayer: Layer, width: CGFloat, rowHeight: CGFloat) -> [KeySpec] {
+    static func layout(_ layer: Layer, page: Int, letterLayer: Layer, landscape: Bool,
+                       width: CGFloat, rowHeight: CGFloat) -> [KeySpec] {
         var specs: [KeySpec] = []
         let top = verticalPadding
 
@@ -126,6 +131,27 @@ final class KeyboardView: UIView {
         }
 
         switch layer {
+        case .korean where landscape:
+            // 가로 화면: 두벌식. 키가 낮아 천지인 4×4보다 일반 자판이 빠르다.
+            let unit = width / 10
+            let h = rowHeight
+            func jamo(_ s: String, x: CGFloat, y: CGFloat) {
+                for (i, ch) in s.enumerated() {
+                    add(.jamo(ch), .letter(String(ch)), x + CGFloat(i) * unit, y, unit, h)
+                }
+            }
+            jamo(Dubeolsik.rows[0], x: 0, y: top)
+            jamo(Dubeolsik.rows[1], x: unit / 2, y: top + h)
+            add(.shift, .shift, 0, top + h * 2, unit * 1.5, h)
+            jamo(Dubeolsik.rows[2], x: unit * 1.5, y: top + h * 2)
+            add(.backspace, .symbol("delete.left", 18), unit * 8.5, top + h * 2, unit * 1.5, h)
+            let y = top + h * 3
+            add(.layer(.symbols), .text("123", 15), 0, y, unit * 1.25, h)
+            add(.globe, .text("한/A", 14), unit * 1.25, y, unit * 1.25, h)
+            add(.space, .space, unit * 2.5, y, unit * 4.5, h)
+            add(.punctuation, .text(".,?!", 16), unit * 7, y, unit, h)
+            add(.enter, .symbol("arrow.turn.down.left", 18), unit * 8, y, unit * 2, h)
+
         case .korean:
             let column = width / (3 + sideColumnRatio)
             let h = rowHeight
@@ -260,13 +286,20 @@ final class KeyView: UIView {
         content.alpha = model.cursorMode ? 0 : 1
         switch spec.content {
         case .letter(let s):
-            label?.text = model.shift == .off ? s : s.uppercased()
+            if model.shift == .off {
+                label?.text = s
+            } else if case .jamo(let c) = spec.action {
+                label?.text = String(Dubeolsik.shifted(c))
+            } else {
+                label?.text = s.uppercased()
+            }
         case .shift:
             image?.image = Self.symbol(model.shift == .locked ? "capslock.fill" : model.shift == .on ? "shift.fill" : "shift", 19)
             active = model.shift != .off
             paint()
         case .space:
-            arrow?.alpha = model.composing ? 1 : 0
+            // 두벌식에서는 간격이 언제나 띄어쓰므로 → 표시가 없다.
+            arrow?.alpha = model.composing && !model.isDubeolsik ? 1 : 0
         default:
             break
         }
@@ -291,7 +324,7 @@ final class KeyView: UIView {
             addImage(Self.symbol("space", 19), center: CGPoint(x: center.x, y: center.y + 2))
             let arrow = UIImageView(image: Self.symbol("arrow.right", 10, .medium))
             arrow.tintColor = .label
-            arrow.center = CGPoint(x: center.x, y: center.y + 15)
+            arrow.center = CGPoint(x: center.x, y: center.y + min(15, bounds.height * 0.32))
             arrow.alpha = 0
             content.addSubview(arrow)
             self.arrow = arrow
@@ -300,6 +333,8 @@ final class KeyView: UIView {
             switch input {
             case .consonant(let key):
                 addLabel("\(key.cycle[0]) \(key.cycle[1])", size: 19)
+            case .jamo(let c):
+                addLabel(String(c), size: 19)
             case .vowel(let stroke):
                 let size: CGSize = switch stroke {
                 // 획 굵기는 옆 자음 글자(시스템 글꼴 19pt)의 획과 같게.
@@ -320,7 +355,8 @@ final class KeyView: UIView {
         let label = UILabel(frame: bounds)
         label.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         label.text = text
-        label.font = .systemFont(ofSize: size)
+        // 가로 화면의 낮은 키에서도 글자가 키 높이를 넘지 않게.
+        label.font = .systemFont(ofSize: min(size, bounds.height * 0.62))
         label.textColor = .label
         label.textAlignment = .center
         content.addSubview(label)

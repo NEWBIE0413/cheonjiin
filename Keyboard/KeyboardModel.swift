@@ -15,6 +15,8 @@ enum Shift {
 enum KeyAction: Equatable {
     case cheonjiin(CheonjiinInput)
     case character(String)
+    /// 가로 화면 두벌식 자모.
+    case jamo(Character)
     case backspace, space, enter, globe, shift
     /// . , ? ! 를 연타로 순환.
     case punctuation
@@ -35,6 +37,15 @@ final class KeyboardModel {
     private(set) var cursorMode = false { didSet { if cursorMode != oldValue { onChange?() } } }
     /// 숫자·특수문자 화면의 쪽(0 = 1/2, 1 = 2/2).
     private(set) var symbolPage = 0 { didSet { if symbolPage != oldValue { onChange?() } } }
+    /// 가로 화면이면 한글을 천지인 대신 두벌식으로, 키를 낮게.
+    var landscape = false {
+        didSet {
+            guard landscape != oldValue else { return }
+            commitComposition()
+            onChange?()
+        }
+    }
+    var isDubeolsik: Bool { layer == .korean && landscape }
     /// 숫자·기호에서 돌아갈 글자 레이어.
     private(set) var letterLayer: Layer = .korean
 
@@ -50,6 +61,9 @@ final class KeyboardModel {
     private var globeTask: Task<Void, Never>?
     private var globeLongPressed = false
     private var spaceSteps = 0
+    /// 길게 누르면 반복할 입력과, 그 반복을 일으킨 키.
+    private var keyRepeatTask: Task<Void, Never>?
+    private var repeatingAction: KeyAction?
     /// 간격을 누르는 순간 띄어쓰기를 넣었는지 — 끌어서 커서 이동이 되면 되돌린다.
     private var spaceInserted = false
     /// 문장부호 키로 넣은 마지막 부호의 순번. 다른 키를 누르면 끝난다.
@@ -73,6 +87,8 @@ final class KeyboardModel {
 
     func press(_ action: KeyAction) {
         feedback()
+        keyRepeatTask?.cancel()
+        var repeatPayload: RepeatPayload?
         syncTask?.cancel()
         lastEditTime = now
         if action != .punctuation, action != .space, punctuationIndex != nil {
@@ -82,11 +98,19 @@ final class KeyboardModel {
         switch action {
         case .cheonjiin(let input):
             apply(engine.type(input, at: now))
+            repeatPayload = .hangul(input)
+        case .jamo(let c):
+            let jamo = shift == .off ? c : Dubeolsik.shifted(c)
+            apply(engine.type(.jamo(jamo), at: now))
+            if shift == .on { shift = .off }
+            repeatPayload = .hangul(.jamo(jamo))
         case .character(let text):
             commitComposition()
-            proxy?.insertText(shift == .off ? text : text.uppercased())
+            let typed = shift == .off ? text : text.uppercased()
+            proxy?.insertText(typed)
             if shift == .on { shift = .off }
             autoShift()
+            repeatPayload = .text(typed)
         case .backspace:
             deleteOnce()
             startRepeat()
@@ -95,9 +119,11 @@ final class KeyboardModel {
             // 먼저 들어가 앞 글자에 붙어 버린다("안" 간격 ㄴ → "알").
             spaceSteps = 0
             spaceInserted = false
-            if punctuationIndex != nil || engine.isComposing {
+            // 천지인에서는 조합 중인 간격이 조합만 끝낸다. 두벌식은 언제나 띄어쓴다.
+            if !isDubeolsik, punctuationIndex != nil || engine.isComposing {
                 commitComposition()
             } else {
+                commitComposition()
                 proxy?.insertText(" ")
                 spaceInserted = true
                 if !layer.isLetters { setLayer(letterLayer) }
@@ -114,6 +140,7 @@ final class KeyboardModel {
             }
             proxy?.insertText(marks[punctuationIndex!])
             syncComposing()
+            repeatPayload = .mark(marks[punctuationIndex!])
         case .enter:
             commitComposition()
             proxy?.insertText("\n")
@@ -134,9 +161,15 @@ final class KeyboardModel {
                 self.controller?.advanceToNextInputMode()
             }
         }
+        repeatingAction = repeatPayload == nil ? nil : action
+        if let repeatPayload { startKeyRepeat(repeatPayload) }
     }
 
     func release(_ action: KeyAction) {
+        if action == repeatingAction {
+            keyRepeatTask?.cancel()
+            repeatingAction = nil
+        }
         switch action {
         case .backspace:
             repeatTask?.cancel()
@@ -235,6 +268,43 @@ final class KeyboardModel {
             wantsCapital = false
         }
         shift = wantsCapital ? .on : .off
+    }
+
+    // MARK: 길게 누르기 반복
+
+    enum RepeatPayload {
+        case hangul(CheonjiinInput)
+        case text(String)
+        case mark(String)
+    }
+
+    /// 글자 키를 0.45초 넘게 누르고 있으면 같은 글자를 계속 넣는다(ㅋㅋㅋ, ㅠㅠㅠ, ...).
+    private func startKeyRepeat(_ payload: RepeatPayload) {
+        keyRepeatTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(450))
+            while !Task.isCancelled {
+                guard let self else { return }
+                self.repeatOnce(payload)
+                if self.hapticsAllowed { self.haptic.impactOccurred(intensity: 0.4) }
+                try? await Task.sleep(for: .milliseconds(85))
+            }
+        }
+    }
+
+    private func repeatOnce(_ payload: RepeatPayload) {
+        switch payload {
+        case .hangul(let input):
+            apply(engine.repeatKey(input))
+        case .text(let text):
+            proxy?.insertText(text)
+        case .mark(let mark):
+            // 반복이 시작되면 문장부호 순환은 끝난다(...이 .,?로 바뀌지 않게).
+            if punctuationIndex != nil {
+                punctuationIndex = nil
+                syncComposing()
+            }
+            proxy?.insertText(mark)
+        }
     }
 
     /// 길게 누르면 처음엔 한 글자씩, 1초쯤 지나면 시스템 키보드처럼 단어째 지운다.

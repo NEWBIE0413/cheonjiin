@@ -169,3 +169,63 @@ func words(keys: String, expected: String) {
     #expect(c.tap("p", count: 4, at: 0.3) == (1, true))
     #expect(c.tap("p", count: 4, at: 2.0) == (0, false))
 }
+
+// MARK: 두벌식 (가로 화면)
+
+func dubeol(_ jamo: String) -> String {
+    var t = Typist()
+    for (i, c) in jamo.enumerated() {
+        if c == "<" { t.apply(t.engine.backspace()); continue }
+        t.apply(t.engine.type(.jamo(c), at: Double(i)))
+    }
+    return t.document
+}
+
+@Test(arguments: [
+    ("ㅎㅏㄴㄱㅜㄱ", "한국"),
+    ("ㄷㅏㄹㄱㅏ", "달가"),
+    ("ㄷㅏㄹㄱ", "닭"),
+    ("ㅇㅗㅏ", "와"),
+    ("ㅇㅗㅐ", "왜"),
+    ("ㅇㅜㅓ", "워"),
+    ("ㅇㅡㅣㅅㅏ", "의사"),
+    ("ㅇㅏㅣ", "아ㅣ"),
+    ("ㅇㅠㅣ", "유ㅣ"),
+    ("ㄱㅏㅂㅅ", "값"),
+    ("ㄱㅏㅂㅅㅇㅣ", "값이"),
+    ("ㅃㅏㅇ", "빵"),
+    ("ㄱㅏㄸ", "가ㄸ"),
+    ("ㅋㅋㅋ", "ㅋㅋㅋ"),
+    ("ㅇㅗㅏ<", "오"),
+    ("ㄷㅏㄹㄱ<", "달"),
+])
+func dubeolsik(keys: String, expected: String) {
+    #expect(dubeol(keys) == expected)
+}
+
+// MARK: 길게 누르기 반복
+
+@Test func repeatConsonantKeyRepeatsCycledConsonant() {
+    var t = Typist()
+    #expect(t.type("ㄱㄱ") == "ㅋ")
+    t.apply(t.engine.repeatKey(.consonant(.giyeok)))
+    t.apply(t.engine.repeatKey(.consonant(.giyeok)))
+    #expect(t.document == "ㅋㅋㅋ")
+}
+
+@Test func repeatVowelKeyRepeatsWholeVowel() {
+    var t = Typist()
+    #expect(t.type("ㅡㆍㆍ") == "ㅠ")
+    t.apply(t.engine.repeatKey(.vowel(.dot)))
+    t.apply(t.engine.repeatKey(.vowel(.dot)))
+    #expect(t.document == "ㅠㅠㅠ")
+}
+
+@Test func repeatAfterSyllableAddsStandaloneJamo() {
+    var t = Typist()
+    #expect(t.type("ㄱㅣㆍ") == "가")
+    t.apply(t.engine.repeatKey(.vowel(.eu)))
+    #expect(t.document == "가ㅡ")
+    t.apply(t.engine.backspace())
+    #expect(t.document == "가")
+}

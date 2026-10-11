@@ -28,6 +28,25 @@ public enum ConsonantKey: Sendable, CaseIterable {
 public enum CheonjiinInput: Sendable, Equatable {
     case consonant(ConsonantKey)
     case vowel(Stroke)
+    /// 두벌식(가로 화면): 자모 하나를 그대로. ㄱ, ㅏ, ㅃ …
+    case jamo(Character)
+}
+
+/// 두벌식 자판 규칙.
+public enum Dubeolsik {
+    public static let rows = ["ㅂㅈㄷㄱㅅㅛㅕㅑㅐㅔ", "ㅁㄴㅇㄹㅎㅗㅓㅏㅣ", "ㅋㅌㅊㅍㅠㅜㅡ"]
+
+    static let shiftMap: [Character: Character] = [
+        "ㅂ": "ㅃ", "ㅈ": "ㅉ", "ㄷ": "ㄸ", "ㄱ": "ㄲ", "ㅅ": "ㅆ", "ㅐ": "ㅒ", "ㅔ": "ㅖ",
+    ]
+
+    /// 시프트를 눌렀을 때의 자모. 쌍자음·ㅒ·ㅖ가 없는 키는 그대로.
+    public static func shifted(_ c: Character) -> Character { shiftMap[c] ?? c }
+
+    /// 두벌식에서 이어 치면 합쳐지는 모음. 천지인 획 규칙과 달리 ㅏ+ㅣ는 ㅐ가 되지 않는다.
+    static let compoundVowels: [String: Character] = [
+        "ㅗㅏ": "ㅘ", "ㅗㅐ": "ㅙ", "ㅗㅣ": "ㅚ", "ㅜㅓ": "ㅝ", "ㅜㅔ": "ㅞ", "ㅜㅣ": "ㅟ", "ㅡㅣ": "ㅢ",
+    ]
 }
 
 /// 문서에 반영할 편집: 커서 앞 `deleteCount`자를 지우고 `insert`를 넣는다.
@@ -58,6 +77,11 @@ enum Vowels {
     ]
     /// 아직 모음이 되지 않은 중간 상태와 화면 표시.
     static let pending: [String: String] = ["ㆍ": "ㆍ", "ㆍㆍ": "‥"]
+
+    /// 모음 → 천지인 획(두벌식 입력을 같은 조합기로 처리하려고).
+    static let strokes: [Character: [Stroke]] = Dictionary(uniqueKeysWithValues: table.map { key, vowel in
+        (vowel, key.compactMap { Stroke(rawValue: $0) })
+    })
 
     static func key(_ strokes: [Stroke]) -> String { String(strokes.map(\.rawValue)) }
     static func vowel(_ strokes: [Stroke]) -> Character? { table[key(strokes)] }
@@ -108,6 +132,35 @@ struct Composition: Equatable {
         return next
     }
 
+    /// 두벌식 모음. 모음을 천지인 획으로 바꿔 담아 두면 렌더링·받침 이동을 그대로 쓸 수 있다.
+    func adding(vowel v: Character) -> Composition {
+        guard let strokes = Vowels.strokes[v] else { return self }
+        var next = self
+        if !current.finals.isEmpty {
+            var head = current
+            let moved = head.finals.removeLast()
+            next.done += head.rendered
+            next.current = Syllable(initial: moved, strokes: strokes)
+        } else if current.strokes.isEmpty {
+            next.current.strokes = strokes
+        } else if let old = current.vowel, let merged = Dubeolsik.compoundVowels[String([old, v])],
+                  let mergedStrokes = Vowels.strokes[merged] {
+            next.current.strokes = mergedStrokes
+        } else {
+            next.done += current.rendered
+            next.current = Syllable(strokes: strokes)
+        }
+        return next
+    }
+
+    /// 길게 누르기 반복: 지금 조합에 붙이지 않고 새 글자로 덧붙인다(ㅋㅋㅋ, ㅠㅠㅠ).
+    func appendingStandalone(_ syllable: Syllable) -> Composition {
+        var next = self
+        next.done += current.rendered
+        next.current = syllable
+        return next
+    }
+
     func adding(stroke s: Stroke) -> Composition {
         var next = self
         if !current.finals.isEmpty {
@@ -141,6 +194,8 @@ public struct CheonjiinEngine: Sendable {
     private var history: [(composition: Composition, group: Int)] = []
     private var nextGroup = 0
     private var cycle: (key: ConsonantKey, index: Int, base: Composition, time: Double, group: Int)?
+    /// 길게 누르기로 반복 중인 자음 — 첫 반복이 순환 정보를 지운 뒤에도 같은 자음을 이어 간다.
+    private var repeating: (key: ConsonantKey, consonant: Character)?
 
     /// 되감기 기록 상한 — 넘치면 오래된 것부터 버리고, 그 너머의 ⌫는 문서 글자를 지운다.
     private let historyLimit = 64
@@ -154,6 +209,7 @@ public struct CheonjiinEngine: Sendable {
     public var isComposing: Bool { !composition.text.isEmpty }
 
     public mutating func type(_ input: CheonjiinInput, at time: Double) -> TextEdit {
+        repeating = nil
         let before = composition.text
         switch input {
         case .consonant(let key):
@@ -172,7 +228,45 @@ public struct CheonjiinEngine: Sendable {
             cycle = nil
             record(group: newGroup())
             composition = composition.adding(stroke: stroke)
+        case .jamo(let c):
+            cycle = nil
+            record(group: newGroup())
+            composition = Hangul.initials.contains(c)
+                ? composition.adding(consonant: c)
+                : composition.adding(vowel: c)
         }
+        return .diff(from: before, to: composition.text)
+    }
+
+    /// 키를 길게 누를 때 반복 입력. 자음 키는 지금 순환 중인 자음(ㅋ을 만들었으면 ㅋ)을,
+    /// 모음 키는 지금 글자가 모음뿐이면 그 모음 전체(ㅠ)를, 아니면 그 획 하나를 새 글자로 덧붙인다.
+    public mutating func repeatKey(_ input: CheonjiinInput) -> TextEdit {
+        let before = composition.text
+        let current = composition.current
+        let syllable: Syllable
+        switch input {
+        case .consonant(let key):
+            let consonant: Character
+            if let r = repeating, r.key == key {
+                consonant = r.consonant
+            } else if let c = cycle, c.key == key {
+                consonant = key.cycle[c.index]
+            } else {
+                consonant = key.cycle[0]
+            }
+            repeating = (key, consonant)
+            syllable = Syllable(initial: consonant)
+        case .vowel(let stroke):
+            let wholeVowel = current.initial == nil && current.vowel != nil
+            syllable = Syllable(strokes: wholeVowel ? current.strokes : [stroke])
+        case .jamo(let c):
+            syllable = Hangul.initials.contains(c)
+                ? Syllable(initial: c)
+                : Syllable(strokes: Vowels.strokes[c] ?? [])
+        }
+        cycle = nil
+        record(group: newGroup())
+        composition = composition.appendingStandalone(syllable)
         return .diff(from: before, to: composition.text)
     }
 
@@ -180,6 +274,7 @@ public struct CheonjiinEngine: Sendable {
     /// 되돌릴 게 없으면 문서의 한 글자를 지우는 편집을 돌려준다.
     public mutating func backspace() -> TextEdit {
         cycle = nil
+        repeating = nil
         guard let group = history.last?.group else {
             composition = Composition()
             return TextEdit(deleteCount: 1)
@@ -196,6 +291,7 @@ public struct CheonjiinEngine: Sendable {
         composition = Composition()
         history.removeAll()
         cycle = nil
+        repeating = nil
     }
 
     private mutating func newGroup() -> Int {

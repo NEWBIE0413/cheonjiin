@@ -24,8 +24,9 @@ final class KeyboardViewController: UIInputViewController {
         height.priority = .required - 1
         heightConstraint = height
         NSLayoutConstraint.activate([
-            keyboardView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            keyboardView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            // 가로 화면에서 노치·모서리 쪽 키가 잘리지 않게 안전 영역 안에 둔다.
+            keyboardView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            keyboardView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             keyboardView.topAnchor.constraint(equalTo: view.topAnchor),
             keyboardView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             height,
@@ -39,10 +40,12 @@ final class KeyboardViewController: UIInputViewController {
         keyboardView.refresh()
     }
 
-    /// 가로 화면에서는 키를 낮춰 글이 가려지지 않게 한다.
+    /// 가로 화면에서는 키를 낮추고 한글을 두벌식으로 바꿔 글이 가려지지 않게 한다.
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
-        let rowHeight = traitCollection.verticalSizeClass == .compact ? KeyboardView.compactRowHeight : KeyboardView.rowHeight
+        let landscape = traitCollection.verticalSizeClass == .compact
+        model.landscape = landscape
+        let rowHeight = landscape ? KeyboardView.compactRowHeight : KeyboardView.rowHeight
         keyboardView.rowHeight = rowHeight
         heightConstraint?.constant = KeyboardView.height(rowHeight: rowHeight)
     }
