@@ -38,6 +38,7 @@ final class KeyboardViewController: UIInputViewController {
         super.viewWillAppear(animated)
         model.refreshContext()
         keyboardView.refresh()
+        view.setNeedsLayout()
     }
 
     /// 가로 화면에서는 키를 낮추고 한글을 두벌식으로 바꿔 글이 가려지지 않게 한다.
@@ -45,7 +46,8 @@ final class KeyboardViewController: UIInputViewController {
         super.viewWillLayoutSubviews()
         let landscape = traitCollection.verticalSizeClass == .compact
         model.landscape = landscape
-        let rowHeight = landscape ? KeyboardView.compactRowHeight : KeyboardView.rowHeight
+        let settings = model.settings
+        let rowHeight = CGFloat(landscape ? settings.landscapeRowHeight : settings.portraitRowHeight)
         keyboardView.rowHeight = rowHeight
         heightConstraint?.constant = KeyboardView.height(rowHeight: rowHeight)
     }

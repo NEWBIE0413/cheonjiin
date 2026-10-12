@@ -46,7 +46,13 @@ final class KeyboardModel {
             onChange?()
         }
     }
-    var isDubeolsik: Bool { layer == .korean && landscape }
+    /// 컨테이너 앱에서 고른 설정. 키보드가 뜰 때마다 다시 읽는다.
+    private(set) var settings = KeyboardSettings()
+    /// 지금 글자 화면의 언어(숫자·기호 화면에서도 돌아갈 언어로 기억한다).
+    private(set) var language: InputLanguage = .cheonjiin { didSet { if language != oldValue { onChange?() } } }
+    var isDubeolsik: Bool {
+        layer == .korean && (language == .dubeolsik || (landscape && settings.landscapeDubeolsik))
+    }
     /// 숫자·기호에서 돌아갈 글자 레이어.
     private(set) var letterLayer: Layer = .korean
 
@@ -74,9 +80,6 @@ final class KeyboardModel {
     private var syncTask: Task<Void, Never>?
 
     static let punctuationMarks = [".", ",", "?", "!"]
-
-    /// 간격 키를 끌 때 커서 한 칸에 해당하는 거리(pt).
-    private static let cursorStep: CGFloat = 9
 
     init(controller: UIInputViewController) {
         self.controller = controller
@@ -175,7 +178,7 @@ final class KeyboardModel {
             }
         }
         repeatingAction = repeatPayload == nil ? nil : action
-        if let repeatPayload { startKeyRepeat(repeatPayload) }
+        if let repeatPayload, settings.keyRepeat { startKeyRepeat(repeatPayload) }
     }
 
     func release(_ action: KeyAction) {
@@ -184,7 +187,7 @@ final class KeyboardModel {
             repeatingAction = nil
         }
         if cursorMode {
-            // 밀어서 커서를 옮긴 손가락이 떨어졌을 뿐 — 그 키의 탭 동작(한/A 전환 등)은 하지 않는다.
+            // 밀어서 커서를 옮긴 손가락이 떨어졌을 뿐 — 그 키의 탭 동작(언어 전환 등)은 하지 않는다.
             cursorMode = false
             return
         }
@@ -193,9 +196,18 @@ final class KeyboardModel {
             repeatTask?.cancel()
             repeatTask = nil
         case .globe:
-            // 한/A 탭: 한글 ↔ 영문. 길게: iOS의 다음 키보드(이모지 등) — 심사 규정상 다음 키보드로 넘어갈 방법.
+            // 지구본 탭: 설정한 언어 순서대로 다음 언어. 언어가 하나뿐이면 iOS의 다음 키보드로.
+            // 길게: iOS의 다음 키보드(이모지 등) — 심사 규정상 다음 키보드로 넘어갈 방법.
             globeTask?.cancel()
-            if !globeLongPressed { setLayer(layer == .korean ? .english : .korean) }
+            guard !globeLongPressed else { break }
+            let list = settings.languages
+            if list.count > 1 {
+                let index = list.firstIndex(of: language) ?? -1
+                setLanguage(list[(index + 1) % list.count])
+            } else {
+                commitComposition()
+                controller?.advanceToNextInputMode()
+            }
         default:
             break
         }
@@ -205,9 +217,10 @@ final class KeyboardModel {
     /// 빠른 타자 중 손가락이 조금 미끄러진 것과 구분하려고 글자 키는 16pt 넘게, 가로로 분명하게
     /// 밀어야 시작한다. 시작되면 그 키로 들어간 글자는 되돌린다.
     func drag(_ action: KeyAction, dx: CGFloat, dy: CGFloat) {
-        guard Self.startsCursorDrag(action) else { return }
+        guard action == .space || (settings.swipeCursor && Self.startsCursorDrag(action)) else { return }
+        let cursorStep = CGFloat(settings.cursorStep)
         if !cursorMode {
-            let threshold: CGFloat = action == .space ? Self.cursorStep : 16
+            let threshold: CGFloat = action == .space ? cursorStep : max(16, cursorStep)
             guard abs(dx) >= threshold, abs(dx) > abs(dy) * 1.5 else { return }
             keyRepeatTask?.cancel()
             repeatingAction = nil
@@ -217,12 +230,12 @@ final class KeyboardModel {
             spaceSteps = 0
             cursorMode = true
         }
-        let steps = Int(dx / Self.cursorStep)
+        let steps = Int(dx / cursorStep)
         guard steps != spaceSteps else { return }
         proxy?.adjustTextPosition(byCharacterOffset: steps - spaceSteps)
         spaceSteps = steps
         // 커서 이동은 진동만(칸마다 소리가 나면 시끄럽다). 세기는 다른 키와 같다.
-        if hapticsAllowed { haptic.impactOccurred() }
+        if hapticsAllowed, settings.haptics { haptic.impactOccurred(intensity: settings.hapticStrength) }
     }
 
     private static func startsCursorDrag(_ action: KeyAction) -> Bool {
@@ -248,6 +261,10 @@ final class KeyboardModel {
 
     func refreshContext() {
         commitComposition()
+        settings = KeyboardSettings.load()
+        if !settings.languages.contains(language) {
+            setLanguage(settings.languages[0])
+        }
         hapticsAllowed = controller?.hasFullAccess == true
         if hapticsAllowed { haptic.prepare() }
         forcedDark = proxy?.keyboardAppearance == .dark
@@ -275,6 +292,11 @@ final class KeyboardModel {
     }
 
     // MARK: 내부
+
+    private func setLanguage(_ next: InputLanguage) {
+        language = next
+        setLayer(next == .english ? .english : .korean)
+    }
 
     private func setLayer(_ next: Layer) {
         commitComposition()
@@ -323,15 +345,15 @@ final class KeyboardModel {
         case mark(String)
     }
 
-    /// 글자 키를 0.45초 넘게 누르고 있으면 같은 글자를 계속 넣는다(ㅋㅋㅋ, ㅠㅠㅠ, ...).
+    /// 글자 키를 설정한 시간 넘게 누르고 있으면 같은 글자를 계속 넣는다(ㅋㅋㅋ, ㅠㅠㅠ, ...).
     private func startKeyRepeat(_ payload: RepeatPayload) {
         keyRepeatTask = Task { [weak self] in
-            try? await Task.sleep(for: Self.repeatDelay)
+            try? await Task.sleep(for: .seconds(self?.settings.repeatDelay ?? 0.32))
             while !Task.isCancelled {
                 guard let self else { return }
                 self.feedback(Self.keySound)
                 self.repeatOnce(payload)
-                try? await Task.sleep(for: Self.repeatInterval)
+                try? await Task.sleep(for: .seconds(self.settings.repeatInterval))
             }
         }
     }
@@ -356,14 +378,14 @@ final class KeyboardModel {
     private func startRepeat() {
         repeatTask?.cancel()
         repeatTask = Task { [weak self] in
-            try? await Task.sleep(for: Self.repeatDelay)
+            try? await Task.sleep(for: .seconds(self?.settings.repeatDelay ?? 0.32))
             var count = 0
             while !Task.isCancelled {
                 guard let self else { return }
                 self.feedback(Self.deleteSound)
                 if count < 14 {
                     self.deleteOnce()
-                    try? await Task.sleep(for: Self.repeatInterval)
+                    try? await Task.sleep(for: .seconds(self.settings.repeatInterval))
                 } else {
                     self.deleteWord()
                     try? await Task.sleep(for: .milliseconds(150))
@@ -411,10 +433,6 @@ final class KeyboardModel {
 
     // MARK: 진동·소리
 
-    /// 길게 누르기: 이만큼 누르고 있으면 반복을 시작하고, 이 간격으로 반복한다(지우기도 같다).
-    static let repeatDelay: Duration = .milliseconds(320)
-    static let repeatInterval: Duration = .milliseconds(50)
-
     /// iOS 기본 키보드와 같은 시스템 소리: 글자 / 지우기 / 기능 키.
     static let keySound: SystemSoundID = 1104
     static let deleteSound: SystemSoundID = 1155
@@ -433,9 +451,12 @@ final class KeyboardModel {
     private func feedback(_ sound: SystemSoundID) {
         // 키보드 익스텐션의 진동과 시스템 소리는 '전체 접근 허용'이 켜져 있을 때만 난다.
         // 소리는 무음 모드면 iOS가 알아서 끈다.
-        if hapticsAllowed {
-            haptic.impactOccurred()
+        if hapticsAllowed, settings.haptics {
+            haptic.impactOccurred(intensity: settings.hapticStrength)
             haptic.prepare()
+        }
+        guard settings.keySound else { return }
+        if hapticsAllowed {
             AudioServicesPlaySystemSound(sound)
         } else {
             UIDevice.current.playInputClick()

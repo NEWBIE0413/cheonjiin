@@ -22,6 +22,11 @@ targets:
     sources: [App]
     dependencies:
       - target: CheonjiinKeyboard
+      - package: CheonjiinCore
+    entitlements:
+      path: App/Cheonjiin.entitlements
+      properties:
+        com.apple.security.application-groups: [group.$(BUNDLE_ID_PREFIX).cheonjiin]
     info:
       path: App/Info.plist
       properties:
@@ -30,6 +35,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
+        CheonjiinAppGroup: group.$(BUNDLE_ID_PREFIX).cheonjiin
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
     settings:
@@ -43,6 +49,10 @@ targets:
     sources: [Keyboard]
     dependencies:
       - package: CheonjiinCore
+    entitlements:
+      path: Keyboard/CheonjiinKeyboard.entitlements
+      properties:
+        com.apple.security.application-groups: [group.$(BUNDLE_ID_PREFIX).cheonjiin]
     info:
       path: Keyboard/Info.plist
       properties:
@@ -50,6 +60,8 @@ targets:
         CFBundleDevelopmentRegion: ko
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # 앱에서 고른 설정을 읽는 공유 저장소.
+        CheonjiinAppGroup: group.$(BUNDLE_ID_PREFIX).cheonjiin
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController

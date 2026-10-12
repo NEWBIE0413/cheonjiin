@@ -4,9 +4,8 @@ import UIKit
 /// 키보드 전체를 그리는 UIKit 뷰. 키는 그림만 그리고, 터치는 이 뷰가 한곳에서 받아
 /// 손가락마다 어느 키인지 판정한다 — 시스템 키보드와 같은 방식이라 빠른 연타·겹친 터치에 강하다.
 final class KeyboardView: UIView {
-    /// 세로 화면의 줄 높이. 가로 화면(높이가 좁음)에서는 `compactRowHeight`.
+    /// 줄 높이 기본값. 실제 값은 설정(세로·가로)에서 온다.
     static let rowHeight: CGFloat = 48
-    static let compactRowHeight: CGFloat = 34
     /// 키 둘레 3pt 틈과 합쳐 위아래 여백을 최소로.
     static let verticalPadding: CGFloat = 1
     static func height(rowHeight: CGFloat) -> CGFloat { rowHeight * 4 + verticalPadding * 2 }
@@ -22,7 +21,7 @@ final class KeyboardView: UIView {
     private var keys: [KeyView] = []
     private var builtLayer: Layer?
     private var builtPage = 0
-    private var builtLandscape = false
+    private var builtDubeolsik = false
     private var builtWidth: CGFloat = 0
     private var touches: [ObjectIdentifier: (key: KeyView, start: CGPoint)] = [:]
 
@@ -52,7 +51,7 @@ final class KeyboardView: UIView {
     }
 
     private var needsRebuild: Bool {
-        builtLayer != model.layer || builtLandscape != model.landscape
+        builtLayer != model.layer || builtDubeolsik != model.isDubeolsik
             || (model.layer == .symbols && builtPage != model.symbolPage)
     }
 
@@ -61,10 +60,10 @@ final class KeyboardView: UIView {
         touches.removeAll()
         builtLayer = model.layer
         builtPage = model.symbolPage
-        builtLandscape = model.landscape
+        builtDubeolsik = model.isDubeolsik
         builtWidth = bounds.width
         keys = Self.layout(model.layer, page: model.symbolPage, letterLayer: model.letterLayer,
-                           landscape: model.landscape, width: bounds.width, rowHeight: rowHeight).map { spec in
+                           dubeolsik: model.isDubeolsik, width: bounds.width, rowHeight: rowHeight).map { spec in
             let key = KeyView(spec: spec)
             addSubview(key)
             key.update(model)
@@ -122,7 +121,7 @@ final class KeyboardView: UIView {
 
     // MARK: 배치
 
-    static func layout(_ layer: Layer, page: Int, letterLayer: Layer, landscape: Bool,
+    static func layout(_ layer: Layer, page: Int, letterLayer: Layer, dubeolsik: Bool,
                        width: CGFloat, rowHeight: CGFloat) -> [KeySpec] {
         var specs: [KeySpec] = []
         let top = verticalPadding
@@ -132,8 +131,8 @@ final class KeyboardView: UIView {
         }
 
         switch layer {
-        case .korean where landscape:
-            // 가로 화면: 두벌식. 키가 낮아 천지인 4×4보다 일반 자판이 빠르다.
+        case .korean where dubeolsik:
+            // 두벌식: 언어로 골랐거나, 가로 화면이라 키가 낮아 천지인 4×4보다 일반 자판이 빠를 때.
             let unit = width / 10
             let h = rowHeight
             func jamo(_ s: String, x: CGFloat, y: CGFloat) {
@@ -148,7 +147,7 @@ final class KeyboardView: UIView {
             add(.backspace, .symbol("delete.left", 18), unit * 8.5, top + h * 2, unit * 1.5, h)
             let y = top + h * 3
             add(.layer(.symbols), .text("123", 15), 0, y, unit * 1.25, h)
-            add(.globe, .text("한/A", 14), unit * 1.25, y, unit * 1.25, h)
+            add(.globe, .symbol("globe", 18, .light), unit * 1.25, y, unit * 1.25, h)
             add(.space, .space, unit * 2.5, y, unit * 4.5, h)
             add(.punctuation, .text(".,?!", 16), unit * 7, y, unit, h)
             add(.enter, .symbol("arrow.turn.down.left", 18), unit * 8, y, unit * 2, h)
@@ -168,7 +167,7 @@ final class KeyboardView: UIView {
             }
             let y = top + 3 * h
             add(.layer(.symbols), .text("123", 16), 0, y, column / 2, h)
-            add(.globe, .text("한/A", 15), column / 2, y, column / 2, h)
+            add(.globe, .symbol("globe", 20, .light), column / 2, y, column / 2, h)
             let ieung = KeyAction.cheonjiin(.consonant(.ieung))
             add(ieung, .cheonjiin(ieung), column, y, column, h)
             add(.space, .space, column * 2, y, column, h)
@@ -192,7 +191,7 @@ final class KeyboardView: UIView {
             add(.backspace, .symbol("delete.left", 20), unit * 8.5, top + h * 2, unit * 1.5, h)
             let y = top + h * 3
             add(.layer(.symbols), .text("123", 16), 0, y, unit * 1.25, h)
-            add(.globe, .text("한/A", 15), unit * 1.25, y, unit * 1.25, h)
+            add(.globe, .symbol("globe", 20, .light), unit * 1.25, y, unit * 1.25, h)
             add(.space, .space, unit * 2.5, y, unit * 5.5, h)
             add(.enter, .symbol("arrow.turn.down.left", 19), unit * 8, y, unit * 2, h)
 
