@@ -493,8 +493,8 @@
       "width": 1178,
       "layer": "korean",
       "page": 0,
-      "height": 753,
-      "sha256": "e32d12d7ad366fa624daa4fc57733a62649adf22634d25dda22ab180f413dd47"
+      "height": 678,
+      "sha256": "e016e1dc6b8eb66d807c201028ec4896148d44d82c2156b5cdbec1bc831e2c9f"
     },
     {
       "file": "screenshots/02.png",
@@ -503,8 +503,8 @@
       "width": 1178,
       "layer": "korean",
       "page": 0,
-      "height": 753,
-      "sha256": "e32d12d7ad366fa624daa4fc57733a62649adf22634d25dda22ab180f413dd47"
+      "height": 678,
+      "sha256": "e016e1dc6b8eb66d807c201028ec4896148d44d82c2156b5cdbec1bc831e2c9f"
     },
     {
       "file": "screenshots/03.png",
@@ -513,8 +513,8 @@
       "width": 1098,
       "layer": "symbols",
       "page": 0,
-      "height": 702,
-      "sha256": "35ce2b9af41001da89835990b319c2358fe56436659fb59000fc50e8cbfaa521"
+      "height": 632,
+      "sha256": "5f424af5c7c687f8a7c4582e685ad96fbe4c5fed761a5130b2186c1e0a33d356"
     },
     {
       "file": "screenshots/03.png",
@@ -523,8 +523,8 @@
       "width": 1098,
       "layer": "symbols",
       "page": 1,
-      "height": 702,
-      "sha256": "a8f637e0eeade08a9e6392b2e2f753edbfbd2e12f62e461eb15a019c437b03b4"
+      "height": 632,
+      "sha256": "e997a562f91342856070a217ac58b6152ab52f681d19a33cd899fbe1f19bec88"
     },
     {
       "file": "screenshots/04.png",
@@ -533,9 +533,9 @@
       "width": 1178,
       "layer": "korean",
       "page": 0,
-      "height": 753,
-      "sha256": "e32d12d7ad366fa624daa4fc57733a62649adf22634d25dda22ab180f413dd47"
+      "height": 678,
+      "sha256": "e016e1dc6b8eb66d807c201028ec4896148d44d82c2156b5cdbec1bc831e2c9f"
     }
   ],
-  "source_sha256": "2c931f95bd3613b33f09340f96f6482ae9c69d862ffb0305792e94d2b712fbf0"
+  "source_sha256": "dbab0481142d2df28d14a4d0dbd08212f744f50d602005fadc57be5661bc68f9"
 }

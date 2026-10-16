@@ -89,6 +89,16 @@ def key_label(d, rect, content, s):
         d.line([(cx + r, cy - r), (cx + r, cy + 2 * s), (cx - r, cy + 2 * s)], fill=INK, width=int(lw), joint="curve")
         d.line([(cx - r, cy + 2 * s), (cx - r + 5 * s, cy - 3 * s)], fill=INK, width=int(lw))
         d.line([(cx - r, cy + 2 * s), (cx - r + 5 * s, cy + 7 * s)], fill=INK, width=int(lw))
+    elif kind == "globe":
+        r = 9 * s
+        w = max(1, int(1.1 * s))
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=INK, width=w)
+        d.ellipse([cx - r * 0.45, cy - r, cx + r * 0.45, cy + r], outline=INK, width=w)
+        d.line([(cx - r, cy), (cx + r, cy)], fill=INK, width=w)
+        d.line([(cx, cy - r), (cx, cy + r)], fill=INK, width=w)
+        for dy in (-0.5, 0.5):
+            half = r * (1 - dy * dy) ** 0.5
+            d.line([(cx - half, cy + dy * r), (cx + half, cy + dy * r)], fill=INK, width=w)
     elif kind == "space":
         w = 18 * s
         d.line([(cx - w / 2, cy - 4 * s), (cx - w / 2, cy + 2 * s), (cx + w / 2, cy + 2 * s), (cx + w / 2, cy - 4 * s)],
@@ -98,7 +108,7 @@ def key_label(d, rect, content, s):
 def keyboard(width_px: int, layer: str = "korean", page: int = 0) -> Image.Image:
     """실제 키보드와 같은 배치를 width_px 폭으로 그린다(375pt 기준 비율)."""
     s = width_px * SS / 375
-    row = 54 * s
+    row = 48 * s  # 앱 기본 줄 높이와 같게
     top = 10 * s
     height = top + row * 4 + 14 * s
     img = Image.new("RGB", (int(width_px * SS), int(height)), CREAM)
@@ -120,7 +130,7 @@ def keyboard(width_px: int, layer: str = "korean", page: int = 0) -> Image.Image
                 add(content, c * col, top + r * row, col, row)
         y = top + 3 * row
         add(("text", ("123", 16)), 0, y, col / 2, row)
-        add(("text", ("한/A", 15)), col / 2, y, col / 2, row)
+        add(("globe", None), col / 2, y, col / 2, row)
         add(("text", ("ㅇ ㅁ", 19)), col, y, col, row)
         add(("space", None), 2 * col, y, col, row)
         side = 375 * s - 3 * col
