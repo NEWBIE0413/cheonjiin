@@ -77,6 +77,13 @@ final class KeyboardModel {
     /// 문장부호 키로 넣은 마지막 부호의 순번. 다른 키를 누르면 끝난다.
     private var punctuationIndex: Int?
     private var lastEditTime = 0.0
+    /// 앱이 글을 바꿨다고 알려 온 뒤 아직 맞춰 보지 않았는지.
+    private var externalChange = false
+    /// 조합 중인 글자의 직전 두 상태 — 앱이 알려 주는 내용이 늦을 때 맞춰 보는 데 쓴다.
+    private var lastComposingText = ""
+    private var previousComposingText = ""
+    /// 글이 선택된 상태에서 누른 키 — 손을 뗄 때 입력하거나, 밀면 버린다.
+    private var pendingPress: KeyAction?
     private var syncTask: Task<Void, Never>?
 
     static let punctuationMarks = [".", ",", "?", "!"]
@@ -93,8 +100,20 @@ final class KeyboardModel {
     func press(_ action: KeyAction) {
         feedback(Self.sound(for: action))
         keyRepeatTask?.cancel()
+        // 글이 선택돼 있으면(사파리 주소창 전체 선택 등) 누르는 즉시 넣으면 선택한 글이 지워진다.
+        // 이때만 손을 뗄 때까지 미뤄서, 밀어 커서를 옮기면 선택을 살린다. 평소엔 즉시 입력한다.
+        if Self.startsCursorDrag(action), let selected = proxy?.selectedText, !selected.isEmpty {
+            pendingPress = action
+            return
+        }
+        pendingPress = nil
+        perform(action, allowRepeat: true)
+    }
+
+    private func perform(_ action: KeyAction, allowRepeat: Bool) {
         var repeatPayload: RepeatPayload?
         syncTask?.cancel()
+        reconcileWithDocument()
         lastEditTime = now
         if action != .punctuation, action != .space, punctuationIndex != nil {
             punctuationIndex = nil
@@ -177,6 +196,7 @@ final class KeyboardModel {
                 self.controller?.advanceToNextInputMode()
             }
         }
+        guard allowRepeat else { return }
         repeatingAction = repeatPayload == nil ? nil : action
         if let repeatPayload, settings.keyRepeat { startKeyRepeat(repeatPayload) }
     }
@@ -189,6 +209,11 @@ final class KeyboardModel {
         if cursorMode {
             // 밀어서 커서를 옮긴 손가락이 떨어졌을 뿐 — 그 키의 탭 동작(언어 전환 등)은 하지 않는다.
             cursorMode = false
+            return
+        }
+        if pendingPress == action {
+            pendingPress = nil
+            perform(action, allowRepeat: false)
             return
         }
         switch action {
@@ -224,7 +249,11 @@ final class KeyboardModel {
             guard abs(dx) >= threshold, abs(dx) > abs(dy) * 1.5 else { return }
             keyRepeatTask?.cancel()
             repeatingAction = nil
-            undoLastPress?()
+            if pendingPress != nil {
+                pendingPress = nil  // 아직 넣지 않았으니 되돌릴 것도 없다(선택한 글이 그대로 남는다).
+            } else {
+                undoLastPress?()
+            }
             undoLastPress = nil
             commitComposition()
             spaceSteps = 0
@@ -275,6 +304,7 @@ final class KeyboardModel {
     /// 앱이 알려 주는 문서 내용은 우리 입력보다 늦게 따라오므로, 타자가 멈추고 잠시 뒤에
     /// 확인한다 — 바로 비교하면 빠른 연타 중에 멀쩡한 조합을 끊어 자모가 떨어져 나간다.
     func documentChanged() {
+        externalChange = true
         syncTask?.cancel()
         guard composing else { return }
         syncTask = Task { [weak self] in
@@ -285,10 +315,24 @@ final class KeyboardModel {
     }
 
     private func verifyComposition() {
-        guard composing, now - lastEditTime >= 0.3,
-              let before = proxy?.documentContextBeforeInput else { return }
+        guard now - lastEditTime >= 0.3 else { return }
+        reconcileWithDocument()
+    }
+
+    /// 앱이 글을 바꿨다는 신호를 받은 뒤라면, 커서 앞 글자가 조합 중인 글자로 끝나는지 보고
+    /// 아니면 조합을 놓는다. 다음 키를 누를 때도 꼭 확인한다 — 메시지를 보내 입력창이 비었는데
+    /// 조합이 남아 있으면 다음 모음이 보낸 마지막 글자를 다시 불러온다("녕" 보냄 → ㅣ → "녀이").
+    /// 앱이 알려 주는 내용은 우리 입력보다 한 박자 늦을 수 있어 직전 조합 상태와 맞아도 그대로 둔다.
+    private func reconcileWithDocument() {
+        guard externalChange else { return }
+        externalChange = false
+        guard composing else { return }
+        // 빈 입력창은 nil을 돌려주는 앱이 많다 — 빈 글로 본다.
+        let before = proxy?.documentContextBeforeInput ?? ""
         let expected = punctuationIndex.map { Self.punctuationMarks[$0] } ?? engine.composingText
-        if !before.hasSuffix(expected) { commitComposition() }
+        let inSync = before.hasSuffix(expected)
+            || (!previousComposingText.isEmpty && before.hasSuffix(previousComposingText))
+        if !inSync { commitComposition() }
     }
 
     // MARK: 내부
@@ -414,6 +458,8 @@ final class KeyboardModel {
     }
 
     private func commitComposition() {
+        lastComposingText = ""
+        previousComposingText = ""
         engine.commit()
         punctuationIndex = nil
         composing = false
@@ -424,6 +470,8 @@ final class KeyboardModel {
     }
 
     private func apply(_ edit: TextEdit) {
+        if !edit.isEmpty { previousComposingText = lastComposingText }
+        defer { lastComposingText = engine.composingText }
         if let proxy {
             for _ in 0..<edit.deleteCount { proxy.deleteBackward() }
             if !edit.insert.isEmpty { proxy.insertText(edit.insert) }
